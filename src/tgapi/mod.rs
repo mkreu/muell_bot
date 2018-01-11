@@ -1,10 +1,4 @@
 use serde_json;
-use futures::{Future, Stream};
-use hyper::Client;
-use hyper::{Method, Request};
-use hyper::header::{ContentLength, ContentType};
-use hyper_tls::HttpsConnector;
-use tokio_core::reactor::Core;
 use std::error::Error;
 use std::net::SocketAddr;
 use std::fs::File;
@@ -12,12 +6,8 @@ use std::io;
 
 pub mod receive;
 pub mod types;
+pub mod send;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct SendMessage<'a> {
-    pub chat_id : i64,
-    pub text : &'a str,
-}
 
 #[derive(Deserialize)]
 pub struct ApiConf {
@@ -30,14 +20,14 @@ pub struct TgApi {
     api_conf : ApiConf
 }
 impl TgApi {
-    pub fn new() -> io::Result<TgApi> {
+    pub fn from_conf() -> io::Result<TgApi> {
         let api_conf = read_api_conf("API.conf")?;
         Ok(TgApi {
             api_conf
         })
     }
 
-    pub fn send(&self, message : SendMessage) -> Result<(), Box<Error>>{
+    /*pub fn send(&self, message : SendMessage) -> Result<(), Box<Error>>{
         let api_string = String::from("https://api.telegram.org/bot") + &self.api_conf.token + "/sendMessage";
         println!("{}", &api_string);
 
@@ -59,7 +49,7 @@ impl TgApi {
         });
         core.run(post)?;
         Ok(())
-    }
+    }*/
 }
 
 fn read_api_conf(filename : &str) -> io::Result<ApiConf> {

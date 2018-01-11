@@ -1,41 +1,58 @@
-extern crate hyper;
-extern crate hyper_tls;
-extern crate futures;
-extern crate tokio_core;
 extern crate serde;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
 extern crate iron;
 extern crate router;
 extern crate chrono;
+extern crate reqwest;
 
-use tgapi::SendMessage;
 use tgapi::types::*;
 use tgapi::TgApi;
+use reminder::MsgUpdate;
 use dates::*;
+use std::sync::mpsc::Sender;
+use std::sync::mpsc;
+use std::sync::Mutex;
+use std::thread;
 
 mod tgapi;
 mod dates;
-
+mod reminder;
 
 fn main() {
     //tgapi::run();
     let mut mgr = DateMgr::new();
-    mgr.append_file("termine.csv").unwrap();
-    TgApi::new().unwrap().start_listen(move |u| handle_update(u, &mgr));
+    mgr.append_file("2018.csv").unwrap();
+    mgr.remove_old();
+    let api = TgApi::from_conf().unwrap();
+    let (tx, thread) = reminder::start_reminder_loop(mgr);
+    let (chan, rx) = mpsc::channel();
+    let mutex = Mutex::new(chan);
+    api.start_listen(move |u : Update| {
+        (*mutex.try_lock().unwrap()).send(u).unwrap();
+    });
+    loop {
+        let update = rx.recv().unwrap();
+        handle_update(update, &thread, &tx);
+    }
 }
 
-fn handle_update(up : Update, mgr : &DateMgr) {
+fn handle_update(up : Update, thread : &thread::Thread, chan : &Sender<MsgUpdate>) {
+    let api = TgApi::from_conf().unwrap();
     match up.message {
         Some(m) => {
             match m.text {
-                Some(ref t) if t == "/next" => {
-                    let msg =SendMessage{chat_id : m.chat.id, text : &get_next_dates(mgr)};
-                    tgapi::TgApi::new().unwrap().send(msg).unwrap()
+                Some(ref t) if t == "/muell" => {
+                    api.send(m.chat.id, "will be fixed in future").unwrap();
+                }
+                Some(ref t) if t == "/skip" => {
+                    chan.send(MsgUpdate::Skip).unwrap();
+                    thread.unpark();
+                    //api.send(m.chat.id, &m.text.unwrap_or(String::from("empty message"))).unwrap();
                 }
                 _ => {
-                    let msg =SendMessage{chat_id : m.chat.id, text : &m.text.unwrap_or(String::from("empty message"))};
-                    tgapi::TgApi::new().unwrap().send(msg).unwrap()
+                    thread.unpark();
+                    api.send(m.chat.id, &m.text.unwrap_or(String::from("unknown command"))).unwrap();
                 }
             }
         },
@@ -44,8 +61,8 @@ fn handle_update(up : Update, mgr : &DateMgr) {
 }
 
 fn get_next_dates(mgr : &DateMgr) -> String {
-    mgr.dates().iter()
-        .filter(|entry| entry.1.get(0).is_some())
-        .map(|(tonne, date)| format!("{} : {}", tonne.name, date.get(0).unwrap().format("%Y-%m-%d")))
+    mgr.upcoming_dates().iter()
+        .map(|&(tonne, date)| format!("{}: {}", tonne.name, date.format("%Y-%m-%d")))
         .fold(String::new(), |mut string, item| {string.push_str(&item); string.push_str("\n"); string})
 }
+

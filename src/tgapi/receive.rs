@@ -5,13 +5,15 @@ use super::types::Update;
 use std::marker::*;
 use serde_json;
 use super::TgApi;
+use std::thread;
 
 impl TgApi {
     pub fn start_listen<F>(&self, callback: F) where F: Fn(Update) + Send + Sync + 'static {
         let mut router = Router::new();
         router.post(&self.api_conf.webhook_path, move |req: &mut Request| webhook_handle(req, &callback), "tgapi");
 
-        /*let iron = */Iron::new(router).http(&self.api_conf.webhook_addr).unwrap();
+        let addr = self.api_conf.webhook_addr.clone();
+        thread::spawn(move||Iron::new(router).http(&addr).unwrap());
     }
 }
 

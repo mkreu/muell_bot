@@ -23,6 +23,46 @@ impl DateMgr {
         &self.dates
     }
 
+    pub fn upcoming_dates(&self) -> Vec<(&TrashType, &NaiveDate)> {
+        self.dates().iter()
+            .filter(|entry| entry.1.get(0).is_some())
+            .map(|(tonne, date)| (tonne, date.get(0).unwrap()))
+            .collect()
+    }
+
+    pub fn next_date(&self) -> Option<(&NaiveDate, Vec<&TrashType>)> {
+        let upcoming = self.upcoming_dates();
+        let mut trashes = Vec::new();
+        let date = match upcoming.get(0) {
+            Some(tup) => {
+                tup.1
+            }
+            None => {
+                return None;
+            }
+        };
+
+        for tup in upcoming {
+            if tup.1 == date {
+                trashes.push(tup.0);
+            }
+            else if tup.1 < date {
+                trashes = Vec::new();
+                trashes.push(tup.0);
+            }
+        }
+        Some((date, trashes))
+    }
+
+    pub fn remove_old(&mut self) {
+        for (k, mut vec) in &self.dates.clone() {
+            let new_vec = vec.iter().filter(|date| date > &&Local::now().naive_local().date())
+                .map(|date| date.to_owned())
+                .collect();
+            self.dates.insert(k.to_owned(), new_vec);
+        }
+    }
+
     pub fn append_file(&mut self, filename: &str) -> Result<(), Box<Error>> {
         let f = File::open(filename)?;
         let mut rdr = BufReader::new(f);
