@@ -5,8 +5,8 @@ use std::thread;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SendMessage {
-    chat_id : i64,
-    text : String
+    pub chat_id : i64,
+    pub text : String
 }
 
 impl TgApi {

@@ -14,6 +14,8 @@ use std::sync::mpsc::Sender;
 use std::sync::mpsc;
 use std::sync::Mutex;
 use std::thread;
+use std::sync::Arc;
+use tgapi::send::SendMessage;
 
 mod tgapi;
 mod dates;
@@ -24,36 +26,40 @@ fn main() {
     let mut mgr = DateMgr::new();
     mgr.append_file("2018.csv").unwrap();
     mgr.remove_old();
+    let mgr = Arc::new(Mutex::new(mgr));
     let api = TgApi::from_conf().unwrap();
-    let (tx, thread) = reminder::start_reminder_loop(mgr);
+    //let (tx, thread) = reminder::start_reminder_loop(mgr);
     let rx = api.start_listen();
     let api_tx = api.init_send();
     loop {
         let update = rx.recv().unwrap();
-        handle_update(update, &thread, &tx);
+        if let Some(msg) = handle_update(update,&mgr) {
+            api_tx.send(msg);
+        }
     }
 }
 
-fn handle_update(up : Update, thread : &thread::Thread, chan : &Sender<MsgUpdate>) {
-    let api = TgApi::from_conf().unwrap();
+fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>) -> Option<SendMessage> {
     match up.message {
         Some(m) => {
             match m.text {
                 Some(ref t) if t == "/muell" => {
-                    //api.send(m.chat.id, "will be fixed in future").unwrap();
+                    let mut dates = mgr.lock().unwrap();
+                    let text = get_next_dates(&*dates);
+                    Some(SendMessage {chat_id : m.chat.id, text})
                 }
                 Some(ref t) if t == "/skip" => {
-                    chan.send(MsgUpdate::Skip).unwrap();
-                    thread.unpark();
-                    //api.send(m.chat.id, &m.text.unwrap_or(String::from("empty message"))).unwrap();
+                    Some(SendMessage{chat_id : m.chat.id, text : String::from("skipping")})
                 }
                 _ => {
-                    thread.unpark();
-                    //api.send(m.chat.id, &m.text.unwrap_or(String::from("unknown command"))).unwrap();
+                    Some(SendMessage{chat_id : m.chat.id, text : String::from("unknown command")})
                 }
             }
         },
-        None => println!("Empty update")
+        None =>  {
+            println!("Empty update");
+            None
+        }
     }
 }
 
