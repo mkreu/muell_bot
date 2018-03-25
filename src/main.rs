@@ -26,11 +26,8 @@ fn main() {
     mgr.remove_old();
     let api = TgApi::from_conf().unwrap();
     let (tx, thread) = reminder::start_reminder_loop(mgr);
-    let (chan, rx) = mpsc::channel();
-    let mutex = Mutex::new(chan);
-    api.start_listen(move |u : Update| {
-        (*mutex.try_lock().unwrap()).send(u).unwrap();
-    });
+    let rx = api.start_listen();
+    let api_tx = api.init_send();
     loop {
         let update = rx.recv().unwrap();
         handle_update(update, &thread, &tx);
@@ -43,7 +40,7 @@ fn handle_update(up : Update, thread : &thread::Thread, chan : &Sender<MsgUpdate
         Some(m) => {
             match m.text {
                 Some(ref t) if t == "/muell" => {
-                    api.send(m.chat.id, "will be fixed in future").unwrap();
+                    //api.send(m.chat.id, "will be fixed in future").unwrap();
                 }
                 Some(ref t) if t == "/skip" => {
                     chan.send(MsgUpdate::Skip).unwrap();
@@ -52,7 +49,7 @@ fn handle_update(up : Update, thread : &thread::Thread, chan : &Sender<MsgUpdate
                 }
                 _ => {
                     thread.unpark();
-                    api.send(m.chat.id, &m.text.unwrap_or(String::from("unknown command"))).unwrap();
+                    //api.send(m.chat.id, &m.text.unwrap_or(String::from("unknown command"))).unwrap();
                 }
             }
         },

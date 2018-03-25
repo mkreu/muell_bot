@@ -1,18 +1,27 @@
 use super::*;
 use reqwest::Client;
+use std::sync::mpsc;
+use std::thread;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct SendMessage<'a> {
+pub struct SendMessage {
     chat_id : i64,
-    text : &'a str,
+    text : String
 }
 
 impl TgApi {
-    pub fn send(&self, chat_id : i64, text : &str) -> Result<(), Box<Error>>{
+    pub fn init_send(&self) -> mpsc::Sender<SendMessage> {
+        let (tx, rx) = mpsc::channel();
         let api_string = String::from("https://api.telegram.org/bot") + &self.api_conf.token + "/sendMessage";
-        let msg = SendMessage{chat_id, text};
-        let client = Client::new();
-        let _res = client.post(&api_string).json(&msg).send()?;
-        Ok(())
+        thread::spawn(move || {
+            let client = Client::new();
+            for msg in rx.iter() {
+                if let Err(e) = client.post(&api_string).json(&msg).send() {
+                    println!("Error during send: {:?}", e);
+                }
+            }
+        });
+        tx
     }
 }
+

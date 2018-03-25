@@ -30,7 +30,7 @@ pub enum MsgUpdate {
     //Poll
 }
 
-pub fn start_reminder_loop(mut date_mgr : DateMgr) -> (Sender<MsgUpdate>, thread::Thread) {
+pub fn start_reminder_loop(date_mgr : DateMgr) -> (Sender<MsgUpdate>, thread::Thread) {
     let (sender, receiver) = channel();
     (sender, thread::spawn(move|| {
         match reminder_loop(date_mgr, receiver) {
@@ -97,11 +97,11 @@ fn handle_msg(channel : &Receiver<MsgUpdate>, next_date : &NaiveDate, old_wake :
 
 
 fn send_debug_message(wake : &DateTime<Local>, active_date : &NaiveDate) {
-    TgApi::from_conf().unwrap().send(ADMIN_ID, &format!("{}\n{}", wake, active_date)).unwrap()
+    //TgApi::from_conf().unwrap().send(ADMIN_ID, &format!("{}\n{}", wake, active_date)).unwrap()
 }
 
 fn send_reminder(active_date : &NaiveDate, trashes : Vec<&TrashType>) {
-    TgApi::from_conf().unwrap().send(HAUS_ID, &format!("Morgen ({}) kommt;\n{:?}", active_date, trashes)).unwrap()
+    //TgApi::from_conf().unwrap().send(HAUS_ID, &format!("Morgen ({}) kommt;\n{:?}", active_date, trashes)).unwrap()
 }
 
 

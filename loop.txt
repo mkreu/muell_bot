@@ -1,0 +1,13 @@
+Loop iterates when: NewMsg (Skip or Poll), Timeout expired
+    1. Poll: send message and sleep again to date as before
+    2. Skip: Check if we are in range to skip
+        a) No => got to sleep again
+        b) Yes => Sleep until day after Müll
+    3. Timeout: Evaluate if we are really over sleep time
+        a) No => go to sleep again
+        b) Yes => Check if we are after 9:00
+            i) No: advance next reminder Time:
+                A. 12:00 -> 18:00
+                B. else: -> +2h
+            ii) Extract next dates and adjust sleep timeout
+Set new park_timeout
