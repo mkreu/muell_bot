@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# update CI branch, compile, restart bot
+cd /home/walnut/muell_bot
+bash ci_update.sh
+pgrep -a muell_bot
