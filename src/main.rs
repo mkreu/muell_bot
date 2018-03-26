@@ -39,6 +39,7 @@ fn main() {
     }
 }
 
+
 fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>) -> Option<SendMessage> {
     match up.message {
         Some(m) => {
