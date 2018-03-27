@@ -19,6 +19,7 @@ use tgapi::send::SendMessage;
 mod tgapi;
 mod dates;
 mod reminder;
+mod id_list;
 
 fn main() {
     //tgapi::run();
