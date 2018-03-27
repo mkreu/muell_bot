@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "deploying at `date` ..." > .deploy.log
-echo "in dir $PWD"
+echo "in dir $PWD" > .deploy.log
 LASTHEAD="`cat .git/refs/heads/master`"
 LOGRANGE=""
 [ "$LASTHEAD" != "" ] && LOGRANGE="${LASTHEAD}..HEAD"
