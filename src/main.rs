@@ -7,7 +7,6 @@ extern crate chrono;
 extern crate reqwest;
 
 use tgapi::types::*;
-use tgapi::TgApi;
 use reminder::MsgUpdate;
 use dates::*;
 use std::sync::mpsc::Sender;
@@ -27,12 +26,12 @@ fn main() {
     mgr.append_file("2018.csv").unwrap();
     mgr.remove_old();
     let mgr = Arc::new(Mutex::new(mgr));
-    let api = TgApi::from_conf().unwrap();
+    let api = tgapi::read_api_conf("API.conf").unwrap();
     //let (tx, thread) = reminder::start_reminder_loop(mgr);
-    let rx = api.start_listen();
-    let api_tx = api.init_send();
+    let api_rx = tgapi::receive::start_listen(&api);
+    let api_tx = tgapi::send::init_send(&api);
     loop {
-        let update = rx.recv().unwrap();
+        let update = api_rx.recv().unwrap();
         if let Some(msg) = handle_update(update,&mgr) {
             api_tx.send(msg);
         }

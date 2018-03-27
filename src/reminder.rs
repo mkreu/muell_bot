@@ -1,7 +1,6 @@
 use chrono::prelude::*;
 use chrono::Duration;
 use super::dates::*;
-use super::tgapi::TgApi;
 use std::{error, fmt, thread};
 use std::error::Error;
 use std::sync::mpsc::*;

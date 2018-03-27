@@ -9,19 +9,17 @@ pub struct SendMessage {
     pub text : String
 }
 
-impl TgApi {
-    pub fn init_send(&self) -> mpsc::Sender<SendMessage> {
-        let (tx, rx) = mpsc::channel();
-        let api_string = String::from("https://api.telegram.org/bot") + &self.api_conf.token + "/sendMessage";
-        thread::spawn(move || {
-            let client = Client::new();
-            for msg in rx.iter() {
-                if let Err(e) = client.post(&api_string).json(&msg).send() {
-                    println!("Error during send: {:?}", e);
-                }
+pub fn init_send(api_conf : &ApiConf) -> mpsc::Sender<SendMessage> {
+    let (tx, rx) = mpsc::channel();
+    let api_string = String::from("https://api.telegram.org/bot") + &api_conf.token + "/sendMessage";
+    thread::spawn(move || {
+        let client = Client::new();
+        for msg in rx.iter() {
+            if let Err(e) = client.post(&api_string).json(&msg).send() {
+                println!("Error during send: {:?}", e);
             }
-        });
-        tx
-    }
+        }
+    });
+    tx
 }
 
