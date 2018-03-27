@@ -7,7 +7,7 @@ LOGRANGE=""
 git shortlog "$LOGRANGE" >> .deploy.log
 #go build -v >> .deploy.log
 echo "building ..." >> .deploy.log
-{ cargo build && echo "build successful." || echo "ERROR: build failed!" ; } >> .deploy.log 2>&1
+{ .cargo/bin/cargo build && echo "build successful." || echo "ERROR: build failed!" ; } >> .deploy.log 2>&1
 echo "finished." >> .deploy.log
 
 mv .deploy.log deploy.log
