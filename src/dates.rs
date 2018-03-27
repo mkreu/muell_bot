@@ -54,7 +54,6 @@ impl DateMgr {
         Some((date, trashes))
     }
 
-
     pub fn remove_old(&mut self) {
         for (k, vec) in &self.dates.clone() {
             let new_vec = vec.iter().filter(|date| date > &&Local::now().naive_local().date())
