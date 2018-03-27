@@ -3,7 +3,7 @@ echo "deploying at `date` ..." > .deploy.log
 LASTHEAD="`cat .git/refs/heads/master`"
 LOGRANGE=""
 [ "$LASTHEAD" != "" ] && LOGRANGE="${LASTHEAD}..HEAD"
-#git pull >> .deploy.log
+git pull >> .deploy.log
 git shortlog "$LOGRANGE" >> .deploy.log
 #go build -v >> .deploy.log
 echo "building ..." >> .deploy.log
