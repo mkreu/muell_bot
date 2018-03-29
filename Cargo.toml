@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Michael Kreuzer <m-git@kreuzers.org>"]
 
 [dependencies]
+lazy_static = "1.0"
 reqwest = "0.8"
 serde = "1"
 serde_derive = "1"

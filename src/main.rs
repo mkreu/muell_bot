@@ -5,9 +5,9 @@ extern crate iron;
 extern crate router;
 extern crate chrono;
 extern crate reqwest;
+#[macro_use] extern crate lazy_static;
 
 use tgapi::types::*;
-use reminder::MsgUpdate;
 use dates::*;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc;
@@ -15,6 +15,7 @@ use std::sync::Mutex;
 use std::thread;
 use std::sync::Arc;
 use tgapi::send::SendMessage;
+use chrono::Local;
 
 mod tgapi;
 mod dates;
@@ -31,6 +32,8 @@ fn main() {
     //let (tx, thread) = reminder::start_reminder_loop(mgr);
     let api_rx = tgapi::receive::start_listen(&api);
     let api_tx = tgapi::send::init_send(&api);
+    reminder::tmp_activate();
+    reminder::schedule_reminder(Local::now(), api_tx.clone(), mgr.clone());
     loop {
         let update = api_rx.recv().unwrap();
         if let Some(msg) = handle_update(update,&mgr) {
@@ -51,6 +54,14 @@ fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>) -> Option<SendMessage>
                 }
                 Some(ref t) if t == "/skip" => {
                     Some(SendMessage{chat_id : m.chat.id, text : String::from("skipping")})
+                }
+                Some(ref t) if t == "/start" => {
+                    id_list::add_user(m.chat.id);
+                    Some(SendMessage{chat_id : m.chat.id, text : String::from("Welcome to the Müllbot!")})
+                }
+                Some(ref t) if t == "/stop" => {
+                    //TODO
+                    Some(SendMessage{chat_id : m.chat.id, text : String::from("cannot remove you yet")})
                 }
                 _ => {
                     Some(SendMessage{chat_id : m.chat.id, text : String::from("unknown command")})
