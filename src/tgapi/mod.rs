@@ -1,5 +1,4 @@
 use serde_json;
-use std::error::Error;
 use std::net::SocketAddr;
 use std::fs::File;
 use std::io;

@@ -23,7 +23,7 @@ fn read_list() -> io::Result<IdList> {
 }
 
 fn write_list(list : IdList) -> io::Result<()> {
-    serde_json::to_writer(File::create(CLIENT_FILE)?, &list);
+    serde_json::to_writer(File::create(CLIENT_FILE)?, &list)?;
     Ok(())
 }
 

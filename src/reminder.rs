@@ -1,20 +1,16 @@
 use chrono::prelude::*;
 use chrono::Duration;
 use super::dates::*;
-use std::{error, fmt, thread};
-use std::error::Error;
+use std::thread;
 use std::sync::mpsc::*;
 use std::time::Duration as StdDuration;
 use std::sync::Mutex;
 use tgapi::send::SendMessage;
 use std::sync::Arc;
 use id_list;
+use std::sync::mpsc;
 
-lazy_static! {
-    static ref CUR_DATE: Mutex<Option<NaiveDate>> = Mutex::new(None);
-}
-
-#[derive(Debug)]
+/*#[derive(Debug)]
 pub struct NoMoreDateError;
 
 impl error::Error for NoMoreDateError {
@@ -25,10 +21,129 @@ impl error::Error for NoMoreDateError {
 
 impl fmt::Display for NoMoreDateError {
      fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-         write!(f, "No Mor Date Error: {}", self.description())
+         write!(f, "No Mor Date Error: {}", self.description());
+         Ok(())
      }
+}*/
+
+struct Reminder {
+    date_mgr : Arc<Mutex<DateMgr>>,
+    chan : Sender<SendMessage>,
+    scheduled_wakes : Vec<DateTime<Local>>,
+    skip_rx : Receiver<()>
 }
 
+pub struct Skipper {
+    skip_tx : Sender<()>
+}
+
+pub fn start_loop(chan : Sender<SendMessage>, date_mgr : Arc<Mutex<DateMgr>>) -> Skipper {
+    let (skip_tx, skip_rx) = mpsc::channel();
+    let mut reminder = Reminder{
+        chan,
+        date_mgr,
+        scheduled_wakes : Vec::new(),
+        skip_rx
+    };
+    thread::spawn(move || reminder.daily_update_loop());
+    Skipper{skip_tx}
+}
+
+impl Skipper {
+    pub fn skip(&self){
+        self.skip_tx.send(()).unwrap();
+    }
+}
+
+impl Reminder {
+
+    fn fill_wakes(&mut self, next_date : &NaiveDate) {
+        let before_date = *next_date - Duration::days(1);
+        let mut to_insert = vec![
+            before_date.and_hms(12, 0, 0),
+            before_date.and_hms(18, 0, 0),
+            before_date.and_hms(20, 0, 0),
+            before_date.and_hms(22, 0, 0),
+            next_date.and_hms(0, 0, 0),
+            next_date.and_hms(2, 0, 0),
+            next_date.and_hms(4, 0, 0),
+            next_date.and_hms(6, 0, 0),
+            next_date.and_hms(8, 0, 0),
+        ];
+        to_insert.reverse();
+        self.scheduled_wakes = to_insert.iter()
+            .map(|date| Local.from_local_datetime(date).unwrap())
+            .collect();
+    }
+    fn daily_update_loop(&mut self) {
+        loop {
+            let now_time = Local::now().time();
+            let tomorrow = Local::now().with_hour(12).unwrap() + Duration::days(1);
+            if now_time < NaiveTime::from_hms(11, 45, 0) || now_time > NaiveTime::from_hms(12, 15, 0) {
+                println!("woke daily scheduler at the wrong time, ignoring");
+            }
+            let next_date = {
+                let mut guard = self.date_mgr.lock().unwrap();
+                guard.remove_old();
+                guard.next_date().unwrap().0.clone()
+            };
+            self.fill_wakes(&next_date);
+            println!("Filled wakes, now starting inner loop with times:\n {:?}", self.scheduled_wakes);
+            self.reminder_update_loop();
+            println!("Should sleep now...");
+            sleep_until(&tomorrow);
+        }
+    }
+
+    fn reminder_update_loop(&mut self) {
+        loop {
+            if self.skip_rx.try_recv().is_ok() {
+                self.scheduled_wakes.clear();
+            }
+
+            if let Some(_) = self.scheduled_wakes.pop() {
+                self.msg_update();
+                if let Some(next_wake) = self.scheduled_wakes.last()  {
+                    println!("Next wake: {:?}", &next_wake);
+                    sleep_until(next_wake);
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+
+    fn msg_update(&self) {
+        let guard = self.date_mgr.lock().unwrap();
+        let next_date = guard.next_date().unwrap();
+        //Send update Message
+        let txt = format_update_msg(next_date.0, next_date.1);
+        let subscribers = id_list::get_user_ids().unwrap();
+        subscribers.iter().map(|id| SendMessage{chat_id : *id, text : txt.clone()})
+            .for_each(|msg| self.chan.send(msg).unwrap());
+    }
+
+}
+
+fn sleep_until(time : &DateTime<Local>) {
+    let dur = time.timestamp() - Local::now().timestamp();
+    let i = if dur < 0 {
+        1
+    } else {
+        dur as u64
+    };
+    let dur = i;
+    println!("Will now sleep for {} seconds", &dur);
+    thread::sleep(StdDuration::new(dur, 0))
+}
+
+fn format_update_msg(date : &NaiveDate, trashes : Vec<&TrashType>) -> String{
+    format!("Morgen ({}) kommt;\n{:?}", date, trashes)
+}
+
+//Below old code
+/*
 pub fn skip_current() {
     let mut handle = CUR_DATE.lock().unwrap();
     *handle = None;
@@ -48,16 +163,6 @@ pub fn schedule_reminder(wake : DateTime<Local>, chan : Sender<SendMessage>, dat
 }
 
 fn remind(chan : Sender<SendMessage>, date_mgr : Arc<Mutex<DateMgr>>) {
-    if let Some(_) = *CUR_DATE.lock().unwrap() {
-        if let Some(next_date) = date_mgr.lock().unwrap().next_date() {
-            //Send update Message
-            let txt = format_update_msg(next_date.0, next_date.1);
-            let subscribers = id_list::get_user_ids().unwrap();
-            subscribers.iter().map(|id| SendMessage{chat_id : *id, text : txt.clone()})
-                .for_each(|msg| chan.send(msg).unwrap());
-            //Spawn new Thread
-        }
-    }
 }
 
 fn get_next_wake(active_date : &NaiveDate) -> DateTime<Local> {
@@ -80,13 +185,10 @@ fn get_next_wake(active_date : &NaiveDate) -> DateTime<Local> {
     }
 }
 
-fn format_update_msg(date : &NaiveDate, trashes : Vec<&TrashType>) -> String{
-    format!("Morgen ({}) kommt;\n{:?}", date, trashes)
-}
 
 
 
-/*pub fn start_reminder_loop(date_mgr : DateMgr) -> (Sender<MsgUpdate>, thread::Thread) {
+pub fn start_reminder_loop(date_mgr : DateMgr) -> (Sender<MsgUpdate>, thread::Thread) {
     let (sender, receiver) = channel();
     (sender, thread::spawn(move|| {
         match reminder_loop(date_mgr, receiver) {
@@ -139,13 +241,13 @@ fn handle_msg(channel : &Receiver<MsgUpdate>, next_date : &NaiveDate, old_wake :
 }*/
 
 
-fn send_debug_message(wake : &DateTime<Local>, active_date : &NaiveDate) {
+/*fn send_debug_message(wake : &DateTime<Local>, active_date : &NaiveDate) {
     //TgApi::from_conf().unwrap().send(ADMIN_ID, &format!("{}\n{}", wake, active_date)).unwrap()
 }
 
 fn send_reminder(active_date : &NaiveDate, trashes : Vec<&TrashType>) {
     //TgApi::from_conf().unwrap().send(HAUS_ID, &format!("Morgen ({}) kommt;\n{:?}", active_date, trashes)).unwrap()
-}
+}*/
 
 
 

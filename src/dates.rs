@@ -31,7 +31,8 @@ impl DateMgr {
     }
 
     pub fn next_date(&self) -> Option<(&NaiveDate, Vec<&TrashType>)> {
-        let upcoming = self.upcoming_dates();
+        let mut upcoming = self.upcoming_dates();
+        upcoming.sort_by_key(|tup| tup.1);
         let mut trashes = Vec::new();
         let date = match upcoming.get(0) {
             Some(tup) => {
@@ -56,7 +57,8 @@ impl DateMgr {
 
     pub fn remove_old(&mut self) {
         for (k, vec) in &self.dates.clone() {
-            let new_vec = vec.iter().filter(|date| date > &&Local::now().naive_local().date())
+            let new_vec = vec.iter()
+                .filter(|date| date.and_hms(11, 0, 0) > *&Local::now().naive_local())
                 .map(|date| date.to_owned())
                 .collect();
             self.dates.insert(k.to_owned(), new_vec);

@@ -28,7 +28,7 @@ fn webhook_handle(req : &mut Request, chan : &Mutex<mpsc::Sender<Update>>) -> Ir
         },
         Err(_) => {
             println!("could not parse json!");
-            Ok(Response::with((status::BadRequest)))
+            Ok(Response::with(status::BadRequest))
         },
     }
 }
