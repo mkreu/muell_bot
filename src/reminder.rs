@@ -139,7 +139,16 @@ fn sleep_until(time : &DateTime<Local>) {
 }
 
 fn format_update_msg(date : &NaiveDate, trashes : Vec<&TrashType>) -> String{
-    format!("Morgen ({}) kommt;\n{:?}", date, trashes)
+    let day = if date.and_hms(5, 0 ,0) > Local::now().naive_local(){
+        "Morgen"
+    } else {
+        "Heute"
+    };
+    format!("{} wird der folgende Müll abgeholt:\n{}", day, format_trashes(trashes))
+}
+
+fn format_trashes(trashes : Vec<&TrashType>) -> String {
+    trashes.iter().map(|t| format!("{}", t)).collect::<Vec<String>>().join("\n")
 }
 
 //Below old code

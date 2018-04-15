@@ -3,6 +3,8 @@ use chrono::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::fs::File;
 use std::error::Error;
+use std::fmt;
+use std::fmt::Formatter;
 
 #[derive(Debug)]
 pub struct DateMgr {
@@ -11,7 +13,13 @@ pub struct DateMgr {
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct TrashType {
-    pub name : String
+    pub name : String,
+}
+
+impl fmt::Display for TrashType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 impl DateMgr {
