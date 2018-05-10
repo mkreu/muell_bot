@@ -77,40 +77,45 @@ impl Reminder {
     }
     fn daily_update_loop(&mut self) {
         loop {
-            let now_time = Local::now().time();
-            let tomorrow = Local::now().with_hour(12).unwrap() + Duration::days(1);
-            if now_time < NaiveTime::from_hms(11, 45, 0) || now_time > NaiveTime::from_hms(12, 15, 0) {
-                println!("woke daily scheduler at the wrong time, ignoring");
+            self.reminder_update();
+        }
+    }
+
+    fn reminder_update(&mut self) {
+        // remove all but 12 o clock reminder if skip was called
+        if self.skip_rx.try_recv().is_ok() {
+            let last_date = self.scheduled_wakes.first().expect("wakes should never be empty when not skipped before").clone();
+            self.scheduled_wakes.clear();
+            self.scheduled_wakes.push(last_date.clone());
+        }
+
+        // pop wake time and send reminder msg when at correct time
+        if let Some(next_wake) = self.scheduled_wakes.last().map(|re| re.clone()) {
+            if next_wake >= Local::now() {
+                self.scheduled_wakes.pop();
+                if next_wake.time() != NaiveTime::from_hms(12, 0 , 0) {
+                    self.msg_update();
+                }
             }
+        }
+
+        //if empty, fill with new updates
+        if self.scheduled_wakes.is_empty() {
             let next_date = {
                 let mut guard = self.date_mgr.lock().unwrap();
                 guard.remove_old();
                 guard.next_date().unwrap().0.clone()
             };
             self.fill_wakes(&next_date);
-            println!("Filled wakes, now starting inner loop with times:\n {:?}", self.scheduled_wakes);
-            self.reminder_update_loop();
-            println!("Should sleep now...");
-            sleep_until(&tomorrow);
         }
-    }
 
-    fn reminder_update_loop(&mut self) {
-        loop {
-            if self.skip_rx.try_recv().is_ok() {
-                self.scheduled_wakes.clear();
-            }
-
-            if let Some(_) = self.scheduled_wakes.pop() {
-                self.msg_update();
-                if let Some(next_wake) = self.scheduled_wakes.last()  {
-                    println!("Next wake: {:?}", &next_wake);
-                    sleep_until(next_wake);
-                }
-            }
-            else {
-                break;
-            }
+        //Sleep until next wake
+        if let Some(next_wake) = self.scheduled_wakes.last() {
+            println!("Next wake: {:?}", &next_wake);
+            sleep_until(next_wake);
+        }
+        else {
+            panic!("wakes should never be empty")
         }
     }
 
