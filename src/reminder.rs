@@ -86,7 +86,7 @@ impl Reminder {
         // remove all but 12 o clock reminder if skip was called
         if self.skip_rx.try_recv().is_ok() && self.scheduled_wakes.len() < 10{
             let last_date = self.scheduled_wakes.first().expect("wakes should never be empty when not skipped before").clone();
-            println!("recived skip command")
+            println!("recived skip command");
             self.scheduled_wakes.clear();
             self.scheduled_wakes.push(last_date.clone());
         }
