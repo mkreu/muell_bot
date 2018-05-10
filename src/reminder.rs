@@ -69,6 +69,7 @@ impl Reminder {
             next_date.and_hms(4, 0, 0),
             next_date.and_hms(6, 0, 0),
             next_date.and_hms(8, 0, 0),
+            next_date.and_hms(12, 0, 0),
         ];
         to_insert.reverse();
         self.scheduled_wakes = to_insert.iter()
@@ -83,8 +84,9 @@ impl Reminder {
 
     fn reminder_update(&mut self) {
         // remove all but 12 o clock reminder if skip was called
-        if self.skip_rx.try_recv().is_ok() {
+        if self.skip_rx.try_recv().is_ok() && self.scheduled_wakes.len() < 10{
             let last_date = self.scheduled_wakes.first().expect("wakes should never be empty when not skipped before").clone();
+            println!("recived skip command")
             self.scheduled_wakes.clear();
             self.scheduled_wakes.push(last_date.clone());
         }
