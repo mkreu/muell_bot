@@ -42,6 +42,13 @@ pub fn add_user(id : i64) -> io::Result<()> {
     Ok(())
 }
 
+pub fn remove_user(id : i64) -> io::Result<()> {
+    let mut list = read_list()?;
+    list.subscribers.remove(&id);
+    write_list(list)?;
+    Ok(())
+}
+
 pub fn add_admin(id : i64) -> io::Result<()> {
     let mut list = read_list()?;
     list.admins.insert(id);
