@@ -60,7 +60,7 @@ impl Reminder {
     fn fill_wakes(&mut self, next_date : &NaiveDate) {
         let before_date = *next_date - Duration::days(1);
         let mut to_insert = vec![
-            before_date.and_hms(12, 0, 0),
+            before_date.and_hms(13, 0, 0),
             before_date.and_hms(18, 0, 0),
             before_date.and_hms(20, 0, 0),
             before_date.and_hms(22, 0, 0),
@@ -93,7 +93,7 @@ impl Reminder {
 
         // pop wake time and send reminder msg when at correct time
         if let Some(next_wake) = self.scheduled_wakes.last().map(|re| re.clone()) {
-            if next_wake >= Local::now() {
+            if next_wake <= Local::now() {
                 self.scheduled_wakes.pop();
                 if next_wake.time() != NaiveTime::from_hms(12, 0 , 0) {
                     self.msg_update();
