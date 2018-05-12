@@ -45,22 +45,22 @@ fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>, reminder : &Skipper) -
                 Some(ref t) if t == "/muell" => {
                     let mut dates = mgr.lock().unwrap();
                     let text = get_next_dates(&*dates);
-                    Some(SendMessage {chat_id : m.chat.id, text})
+                    Some(SendMessage::md(m.chat.id, text))
                 }
                 Some(ref t) if t == "/skip" => {
                     reminder.skip();
-                    Some(SendMessage{chat_id : m.chat.id, text : String::from("Der Müll wurde also rausgebracht. Dann bin ich jetzt ruhig")})
+                    Some(SendMessage::txt(m.chat.id, String::from("Der Müll wurde also rausgebracht. Dann bin ich jetzt ruhig")))
                 }
                 Some(ref t) if t == "/start" => {
                     id_list::add_user(m.chat.id).unwrap();
-                    Some(SendMessage{chat_id : m.chat.id, text : String::from("Welcome to the Müllbot! You have joined the notification list. /stop to leave")})
+                    Some(SendMessage::txt(m.chat.id, String::from("Welcome to the Müllbot! You have joined the notification list. /stop to leave")))
                 }
                 Some(ref t) if t == "/stop" => {
                     id_list::remove_user(m.chat.id).unwrap();
-                    Some(SendMessage{chat_id : m.chat.id, text : String::from("Removed you from notification list. Type /start to rejoin")})
+                    Some(SendMessage::txt(m.chat.id, String::from("Removed you from notification list. Type /start to rejoin")))
                 }
                 _ => {
-                    Some(SendMessage{chat_id : m.chat.id, text : String::from("unknown command")})
+                    Some(SendMessage::txt(m.chat.id, String::from("unknown command")))
                 }
             }
         },
@@ -73,7 +73,7 @@ fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>, reminder : &Skipper) -
 
 fn get_next_dates(mgr : &DateMgr) -> String {
     mgr.upcoming_dates().iter()
-        .map(|&(tonne, date)| format!("{}: {}", tonne.name, date.format("%Y-%m-%d")))
+        .map(|&(tonne, date)| format!("*{}:*\n    `{}`", tonne.name, date.format("%Y-%m-%d")))
         .fold(String::new(), |mut string, item| {string.push_str(&item); string.push_str("\n"); string})
 }
 

@@ -127,7 +127,7 @@ impl Reminder {
         //Send update Message
         let txt = format_update_msg(next_date.0, next_date.1);
         let subscribers = id_list::get_user_ids().unwrap();
-        subscribers.iter().map(|id| SendMessage{chat_id : *id, text : txt.clone()})
+        subscribers.iter().map(|id| SendMessage::txt(*id, txt.clone()))
             .for_each(|msg| self.chan.send(msg).unwrap());
     }
 
