@@ -42,20 +42,20 @@ fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>, reminder : &Skipper) -
     match up.message {
         Some(m) => {
             match m.text {
-                Some(ref t) if t == "/muell" => {
+                Some(ref t) if t.starts_with("/muell") => {
                     let mut dates = mgr.lock().unwrap();
                     let text = get_next_dates(&*dates);
                     Some(SendMessage::md(m.chat.id, text))
                 }
-                Some(ref t) if t == "/skip" => {
+                Some(ref t) if t.starts_with("/skip") => {
                     reminder.skip();
                     Some(SendMessage::txt(m.chat.id, String::from("Der Müll wurde also rausgebracht. Dann bin ich jetzt ruhig")))
                 }
-                Some(ref t) if t == "/start" => {
+                Some(ref t) if t.starts_with("/start") => {
                     id_list::add_user(m.chat.id).unwrap();
                     Some(SendMessage::txt(m.chat.id, String::from("Welcome to the Müllbot! You have joined the notification list. /stop to leave")))
                 }
-                Some(ref t) if t == "/stop" => {
+                Some(ref t) if t.starts_with("/stop") => {
                     id_list::remove_user(m.chat.id).unwrap();
                     Some(SendMessage::txt(m.chat.id, String::from("Removed you from notification list. Type /start to rejoin")))
                 }
