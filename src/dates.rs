@@ -11,14 +11,37 @@ pub struct DateMgr {
     dates : HashMap<TrashType, VecDeque<NaiveDate>>
 }
 
+const SYMB_RESTMUELL : &str = "🗑";
+const SYMB_PAPIER : &str = "📃";
+const SYMB_GELBERSACK : &str = "♻️";
+const SYMB_BIOMUELL : &str = "💩";
+const SYMB_DEFAULT : &str = "";
+
+
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct TrashType {
     pub name : String,
+    pub symbol: &'static str
+}
+
+impl TrashType {
+    fn new(name : &str) -> TrashType {
+        TrashType {
+            name: String::from(name),
+            symbol: match name {
+                "Restmüll" => SYMB_RESTMUELL,
+                "Papier" => SYMB_PAPIER,
+                "Bioabfall" => SYMB_BIOMUELL,
+                "Gelber Sack" => SYMB_GELBERSACK,
+                _ => SYMB_DEFAULT
+            }
+        }
+    }
 }
 
 impl fmt::Display for TrashType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f, "{} {}", self.symbol, self.name)
     }
 }
 
@@ -82,7 +105,7 @@ impl DateMgr {
         rdr.read_line(&mut header)?;
         let mut idx = Vec::new(); //Saves names with index in file
         for s in header.split(';') {
-            let trash = TrashType{name : String::from(s.trim())};
+            let trash = TrashType::new(s.trim());
             self.dates.entry(trash.clone()).or_insert(VecDeque::new());
             idx.push(trash);
         }
@@ -109,4 +132,5 @@ impl DateMgr {
         println!("{:?}", self);
         Ok(())
     }
+
 }

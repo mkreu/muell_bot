@@ -73,7 +73,7 @@ fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>, reminder : &Skipper) -
 
 fn get_next_dates(mgr : &DateMgr) -> String {
     mgr.upcoming_dates().iter()
-        .map(|&(tonne, date)| format!("*{}:*\n    `{}`", tonne.name, date.format("%Y-%m-%d")))
+        .map(|&(tonne, date)| format!("*{}:*\n    `{}`", tonne, date.format("%Y-%m-%d")))
         .fold(String::new(), |mut string, item| {string.push_str(&item); string.push_str("\n"); string})
 }
 

@@ -127,7 +127,7 @@ impl Reminder {
         //Send update Message
         let txt = format_update_msg(next_date.0, next_date.1);
         let subscribers = id_list::get_user_ids().unwrap();
-        subscribers.iter().map(|id| SendMessage::txt(*id, txt.clone()))
+        subscribers.iter().map(|id| SendMessage::md(*id, txt.clone()))
             .for_each(|msg| self.chan.send(msg).unwrap());
     }
 
@@ -151,11 +151,11 @@ fn format_update_msg(date : &NaiveDate, trashes : Vec<&TrashType>) -> String{
     } else {
         "Heute"
     };
-    format!("{} wird der folgende Müll abgeholt:\n{}", day, format_trashes(trashes))
+    format!("_{} wird der folgende Müll abgeholt:_\n{}", day, format_trashes(trashes))
 }
 
 fn format_trashes(trashes : Vec<&TrashType>) -> String {
-    trashes.iter().map(|t| format!("{}", t)).collect::<Vec<String>>().join("\n")
+    trashes.iter().map(|t| format!("*{}*", t)).collect::<Vec<String>>().join("\n")
 }
 
 //Below old code
