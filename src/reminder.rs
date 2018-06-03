@@ -90,6 +90,8 @@ impl Reminder {
             self.scheduled_wakes.clear();
             self.scheduled_wakes.push(last_date.clone());
         }
+        //cleaning up skip queue
+        while self.skip_rx.try_recv().is_ok() {}
 
         // pop wake time and send reminder msg when at correct time
         if let Some(next_wake) = self.scheduled_wakes.last().map(|re| re.clone()) {
