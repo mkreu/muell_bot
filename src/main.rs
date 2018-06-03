@@ -49,7 +49,7 @@ fn handle_update(up : Update, mgr : &Arc<Mutex<DateMgr>>, reminder : &Skipper) -
                 }
                 Some(ref t) if t.starts_with("/skip") => {
                     reminder.skip();
-                    Some(SendMessage::txt(m.chat.id, String::from("Der Müll wurde also rausgebracht. Dann bin ich jetzt ruhig")))
+                    Some(SendMessage::md(m.chat.id, String::from("_Der Müll wurde also rausgebracht._ 🎉\nDann bin ich jetzt ruhig")))
                 }
                 Some(ref t) if t.starts_with("/start") => {
                     id_list::add_user(m.chat.id).unwrap();

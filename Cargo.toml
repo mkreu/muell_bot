@@ -1,6 +1,6 @@
 [package]
 name = "muell_bot"
-version = "0.1.0"
+version = "1.0.1"
 authors = ["Michael Kreuzer <m-git@kreuzers.org>"]
 
 [dependencies]
