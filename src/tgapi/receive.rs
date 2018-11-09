@@ -14,7 +14,9 @@ pub fn start_listen(api_conf : &ApiConf) -> mpsc::Receiver<Update> {
     let mutex = Mutex::new(tx);
     router.post(&api_conf.webhook_path, move |req: &mut Request| webhook_handle(req,  &mutex), "tgapi");
     let addr = api_conf.webhook_addr;
-    thread::spawn(move||Iron::new(router).http(&addr).unwrap());
+    let mut iron = Iron::new(router);
+    iron.threads = 4;
+    thread::spawn(move||iron.http(&addr).unwrap());
     rx
 }
 
