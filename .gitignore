@@ -1,6 +1,5 @@
 /target/
 **/*.rs.bk
-*.lock
 *.iml
 .idea/
 Clients.json

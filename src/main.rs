@@ -21,7 +21,7 @@ mod id_list;
 fn main() {
     //tgapi::run();
     let mut mgr = DateMgr::new();
-    mgr.append_file("2019.csv").unwrap();
+    mgr.append_file("dates.csv").unwrap();
     mgr.remove_old();
     let mgr = Arc::new(Mutex::new(mgr));
     let api = tgapi::read_api_conf("API.conf").unwrap();
