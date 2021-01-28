@@ -1,40 +1,39 @@
-use std::collections::{VecDeque, HashMap};
 use chrono::prelude::*;
-use std::io::{BufRead, BufReader};
-use std::fs::File;
+use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::fmt;
 use std::fmt::Formatter;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 #[derive(Debug)]
 pub struct DateMgr {
-    dates : HashMap<TrashType, VecDeque<NaiveDate>>
+    dates: HashMap<TrashType, VecDeque<NaiveDate>>,
 }
 
-const SYMB_RESTMUELL : &str = "🗑";
-const SYMB_PAPIER : &str = "📃";
-const SYMB_GELBERSACK : &str = "♻️";
-const SYMB_BIOMUELL : &str = "💩";
-const SYMB_DEFAULT : &str = "";
-
+const SYMB_RESTMUELL: &str = "🗑";
+const SYMB_PAPIER: &str = "📃";
+const SYMB_GELBETONNE: &str = "♻️";
+const SYMB_BIOMUELL: &str = "💩";
+const SYMB_DEFAULT: &str = "";
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct TrashType {
-    pub name : String,
-    pub symbol: &'static str
+    pub name: String,
+    pub symbol: &'static str,
 }
 
 impl TrashType {
-    fn new(name : &str) -> TrashType {
+    fn new(name: &str) -> TrashType {
         TrashType {
             name: String::from(name),
             symbol: match name {
                 "Restmüll" => SYMB_RESTMUELL,
                 "Papier" => SYMB_PAPIER,
                 "Bioabfall" => SYMB_BIOMUELL,
-                "Gelber Sack" => SYMB_GELBERSACK,
-                _ => SYMB_DEFAULT
-            }
+                "Gelbe Tonne" => SYMB_GELBETONNE,
+                _ => SYMB_DEFAULT,
+            },
         }
     }
 }
@@ -47,7 +46,9 @@ impl fmt::Display for TrashType {
 
 impl DateMgr {
     pub fn new() -> DateMgr {
-        DateMgr { dates: HashMap::new() }
+        DateMgr {
+            dates: HashMap::new(),
+        }
     }
 
     pub fn dates(&self) -> &HashMap<TrashType, VecDeque<NaiveDate>> {
@@ -55,7 +56,8 @@ impl DateMgr {
     }
 
     pub fn upcoming_dates(&self) -> Vec<(&TrashType, &NaiveDate)> {
-        self.dates().iter()
+        self.dates()
+            .iter()
             .filter(|entry| entry.1.get(0).is_some())
             .map(|(tonne, date)| (tonne, date.get(0).unwrap()))
             .collect()
@@ -66,9 +68,7 @@ impl DateMgr {
         upcoming.sort_by_key(|tup| tup.1);
         let mut trashes = Vec::new();
         let date = match upcoming.get(0) {
-            Some(tup) => {
-                tup.1
-            }
+            Some(tup) => tup.1,
             None => {
                 return None;
             }
@@ -77,8 +77,7 @@ impl DateMgr {
         for tup in upcoming {
             if tup.1 == date {
                 trashes.push(tup.0);
-            }
-            else if tup.1 < date {
+            } else if tup.1 < date {
                 trashes = Vec::new();
                 trashes.push(tup.0);
             }
@@ -88,15 +87,16 @@ impl DateMgr {
 
     pub fn remove_old(&mut self) {
         for (k, vec) in &self.dates.clone() {
-            let new_vec = vec.iter()
-                .filter(|date| date.and_hms(11, 0, 0) > *&Local::now().naive_local())
+            let new_vec = vec
+                .iter()
+                .filter(|date| date.and_hms(11, 0, 0) > Local::now().naive_local())
                 .map(|date| date.to_owned())
                 .collect();
             self.dates.insert(k.to_owned(), new_vec);
         }
     }
 
-    pub fn append_file(&mut self, filename: &str) -> Result<(), Box<Error>> {
+    pub fn append_file(&mut self, filename: &str) -> Result<(), Box<dyn Error>> {
         let f = File::open(filename)?;
         let mut rdr = BufReader::new(f);
 
@@ -125,12 +125,11 @@ impl DateMgr {
                         self.dates.get_mut(&idx[i]).unwrap().push_back(date);
                     }
                 }
-                i = i+1;
+                i = i + 1;
             }
         }
 
         println!("{:?}", self);
         Ok(())
     }
-
 }
