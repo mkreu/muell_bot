@@ -23,7 +23,9 @@ mod tgapi;
 fn main() {
     //tgapi::run();
     let mut mgr = DateMgr::new();
-    mgr.append_file("dates.csv").unwrap();
+    for path in fs::read_dir("dates").unwrap() {
+        mgr.append_file(path.unwrap().path()).unwrap();
+    }
     mgr.remove_old();
     let mgr = Arc::new(Mutex::new(mgr));
     let api = tgapi::read_api_conf("API.conf").unwrap();
@@ -43,7 +45,7 @@ fn handle_update(up: Update, mgr: &Arc<Mutex<DateMgr>>, reminder: &Skipper) -> O
     match up.message {
         Some(m) => match m.text {
             Some(ref t) if t.starts_with("/muell") => {
-                let mut dates = mgr.lock().unwrap();
+                let dates = mgr.lock().unwrap();
                 let text = get_next_dates(&*dates);
                 Some(SendMessage::md(m.chat.id, text))
             }

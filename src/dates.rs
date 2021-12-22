@@ -5,6 +5,7 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct DateMgr {
@@ -96,7 +97,7 @@ impl DateMgr {
         }
     }
 
-    pub fn append_file(&mut self, filename: &str) -> Result<(), Box<dyn Error>> {
+    pub fn append_file(&mut self, filename: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         let f = File::open(filename)?;
         let mut rdr = BufReader::new(f);
 
