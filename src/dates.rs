@@ -76,11 +76,10 @@ impl DateMgr {
         };
 
         for tup in upcoming {
-            if tup.1 == date {
-                trashes.push(tup.0);
-            } else if tup.1 < date {
-                trashes = Vec::new();
-                trashes.push(tup.0);
+            match tup {
+                (t, d) if d == date => trashes.push(t),
+                (t, d) if d < date => trashes = vec![t],
+                _ => (),
             }
         }
         Some((date, trashes))
@@ -107,18 +106,19 @@ impl DateMgr {
         let mut idx = Vec::new(); //Saves names with index in file
         for s in header.split(';') {
             let trash = TrashType::new(s.trim());
-            self.dates.entry(trash.clone()).or_insert(VecDeque::new());
+            self.dates
+                .entry(trash.clone())
+                .or_insert_with(VecDeque::new);
             idx.push(trash);
         }
 
         //Parse dates
         for l in rdr.lines().filter_map(|result| result.ok()) {
-            let split = l.split(";");
+            let split = l.split(';');
             if let (4, _) = split.size_hint() {
                 continue;
             }
-            let mut i = 0;
-            for s in split.map(|s| s.trim()) {
+            for (i, s) in split.map(|s| s.trim()).enumerate() {
                 if !s.is_empty() {
                     let date = NaiveDate::parse_from_str(s, "%d.%m.%Y")?;
                     //Remove past dates, maybe move this to other fn
@@ -126,7 +126,6 @@ impl DateMgr {
                         self.dates.get_mut(&idx[i]).unwrap().push_back(date);
                     }
                 }
-                i = i + 1;
             }
         }
 

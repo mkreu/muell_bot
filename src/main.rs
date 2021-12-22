@@ -21,7 +21,6 @@ mod reminder;
 mod tgapi;
 
 fn main() {
-    //tgapi::run();
     let mut mgr = DateMgr::new();
     for path in fs::read_dir("dates").unwrap() {
         mgr.append_file(path.unwrap().path()).unwrap();
@@ -29,7 +28,6 @@ fn main() {
     mgr.remove_old();
     let mgr = Arc::new(Mutex::new(mgr));
     let api = tgapi::read_api_conf("API.conf").unwrap();
-    //let (tx, thread) = reminder::start_reminder_loop(mgr);
     let api_rx = tgapi::receive::start_listen(&api);
     let api_tx = tgapi::send::init_send(&api);
     let reminder = reminder::start_loop(api_tx.clone(), mgr.clone());
@@ -84,7 +82,7 @@ fn get_next_dates(mgr: &DateMgr) -> String {
         .map(|&(tonne, date)| format!("*{}:*\n    `{}`", tonne, date.format("%Y-%m-%d")))
         .fold(String::new(), |mut string, item| {
             string.push_str(&item);
-            string.push_str("\n");
+            string.push('\n');
             string
         })
 }
