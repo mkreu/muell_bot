@@ -6,7 +6,7 @@ use serde_json;
 use std::sync::mpsc;
 use std::sync::Mutex;
 use std::thread;
-use tgapi::ApiConf;
+use crate::tgapi::ApiConf;
 
 pub fn start_listen(api_conf: &ApiConf) -> mpsc::Receiver<Update> {
     let mut router = Router::new();
