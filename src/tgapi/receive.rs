@@ -1,40 +1,43 @@
 use super::types::Update;
 use crate::tgapi::ApiConf;
-use iron::prelude::*;
-use iron::status;
-use log::{info, warn};
-use router::Router;
-use serde_json;
+use log::warn;
+use reqwest::blocking::Client;
+use serde::Deserialize;
 use std::sync::mpsc;
-use std::sync::Mutex;
 use std::thread;
+use std::time::Duration;
 
-pub fn start_listen(api_conf: &ApiConf) -> mpsc::Receiver<Update> {
-    let mut router = Router::new();
-    let (tx, rx) = mpsc::channel();
-    let mutex = Mutex::new(tx);
-    router.post(
-        &api_conf.webhook_path,
-        move |req: &mut Request| webhook_handle(req, &mutex),
-        "tgapi",
-    );
-    let addr = api_conf.webhook_addr;
-    let mut iron = Iron::new(router);
-    iron.threads = 4;
-    thread::spawn(move || iron.http(&addr).unwrap());
-    rx
+#[derive(Deserialize)]
+struct ApiResponse {
+    result: Vec<Update>,
 }
 
-fn webhook_handle(req: &mut Request, chan: &Mutex<mpsc::Sender<Update>>) -> IronResult<Response> {
-    info!("recieved webhook request");
-    match serde_json::from_reader(&mut req.body) {
-        Ok(u) => {
-            chan.lock().unwrap().send(u).unwrap();
-            Ok(Response::with(status::Ok))
+pub fn start_listen(api_conf: &ApiConf) -> mpsc::Receiver<Update> {
+    let client = Client::builder()
+        .timeout(Duration::from_secs(120))
+        .build()
+        .expect("failed to build recieve client");
+    let (tx, rx) = mpsc::channel();
+    let api_string = format!("https://api.telegram.org/bot{}/getUpdates", &api_conf.token);
+    let mut offset = 0;
+    thread::spawn(move || loop {
+        let req_string = format!("{}?offset={}&timeout=100", api_string, offset);
+        match client
+            .get(&req_string)
+            .send()
+            .and_then(|req| req.json::<ApiResponse>())
+        {
+            Err(e) => warn!("Error getting Updates: {:?}", e),
+            Ok(resp) => {
+                offset = resp
+                    .result
+                    .iter()
+                    .map(|up| up.update_id + 1)
+                    .max()
+                    .unwrap_or(offset);
+                resp.result.into_iter().for_each(|up| tx.send(up).unwrap());
+            }
         }
-        Err(_) => {
-            warn!("could not parse json!");
-            Ok(Response::with(status::BadRequest))
-        }
-    }
+    });
+    rx
 }
