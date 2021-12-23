@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs::File;
 use std::io;

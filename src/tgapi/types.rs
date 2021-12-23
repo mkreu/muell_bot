@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 #[derive(Deserialize, Debug)]
 pub struct Update {
     pub update_id: i32,

@@ -1,5 +1,7 @@
 use super::*;
+use log::warn;
 use reqwest::blocking::Client;
+use serde::{Deserialize, Serialize};
 use std::sync::mpsc;
 use std::thread;
 
@@ -36,7 +38,7 @@ pub fn init_send(api_conf: &ApiConf) -> mpsc::Sender<SendMessage> {
         let client = Client::new();
         for msg in rx.iter() {
             if let Err(e) = client.post(&api_string).json(&msg).send() {
-                println!("Error during send: {:?}", e);
+                warn!("Error during send: {:?}", e);
             }
         }
     });

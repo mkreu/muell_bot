@@ -3,6 +3,7 @@ use crate::id_list;
 use crate::tgapi::send::SendMessage;
 use chrono::prelude::*;
 use chrono::Duration;
+use log::info;
 use std::sync::mpsc;
 use std::sync::mpsc::*;
 use std::sync::Arc;
@@ -73,7 +74,7 @@ impl Reminder {
                 .scheduled_wakes
                 .first()
                 .expect("wakes should never be empty when not skipped before");
-            println!("recived skip command");
+            info!("recived skip command");
             self.scheduled_wakes.clear();
             self.scheduled_wakes.push(last_date);
         }
@@ -102,7 +103,7 @@ impl Reminder {
 
         //Sleep until next wake
         if let Some(next_wake) = self.scheduled_wakes.last() {
-            println!("Next wake: {:?}", &next_wake);
+            info!("Next wake: {:?}", &next_wake);
             sleep_until(next_wake);
         } else {
             panic!("wakes should never be empty")
@@ -126,7 +127,7 @@ fn sleep_until(time: &DateTime<Local>) {
     let dur = time.timestamp() - Local::now().timestamp();
     let i = if dur < 0 { 1 } else { dur as u64 };
     let dur = i;
-    println!("Will now sleep for {} seconds", &dur);
+    info!("Will now sleep for {} seconds", &dur);
     thread::sleep(StdDuration::new(dur, 0))
 }
 

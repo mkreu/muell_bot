@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use log::info;
 use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::fmt;
@@ -129,7 +130,7 @@ impl DateMgr {
             }
         }
 
-        println!("{:?}", self);
+        info!("loaded dates, now containing: {:?}", self);
         Ok(())
     }
 }

@@ -1,11 +1,4 @@
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate chrono;
-extern crate iron;
-extern crate reqwest;
-extern crate router;
-extern crate serde_json;
+use log::info;
 
 use crate::dates::*;
 use crate::reminder::Skipper;
@@ -21,6 +14,7 @@ mod reminder;
 mod tgapi;
 
 fn main() {
+    pretty_env_logger::init();
     let mut mgr = DateMgr::new();
     for path in fs::read_dir("dates").unwrap() {
         mgr.append_file(path.unwrap().path()).unwrap();
@@ -70,7 +64,7 @@ fn handle_update(up: Update, mgr: &Arc<Mutex<DateMgr>>, reminder: &Skipper) -> O
             _ => Some(SendMessage::txt(m.chat.id, String::from("unknown command"))),
         },
         None => {
-            println!("Empty update");
+            info!("Recieved empty update");
             None
         }
     }

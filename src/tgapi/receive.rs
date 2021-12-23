@@ -1,12 +1,13 @@
 use super::types::Update;
+use crate::tgapi::ApiConf;
 use iron::prelude::*;
 use iron::status;
+use log::{info, warn};
 use router::Router;
 use serde_json;
 use std::sync::mpsc;
 use std::sync::Mutex;
 use std::thread;
-use crate::tgapi::ApiConf;
 
 pub fn start_listen(api_conf: &ApiConf) -> mpsc::Receiver<Update> {
     let mut router = Router::new();
@@ -25,14 +26,14 @@ pub fn start_listen(api_conf: &ApiConf) -> mpsc::Receiver<Update> {
 }
 
 fn webhook_handle(req: &mut Request, chan: &Mutex<mpsc::Sender<Update>>) -> IronResult<Response> {
-    println!("recieved webhook request");
+    info!("recieved webhook request");
     match serde_json::from_reader(&mut req.body) {
         Ok(u) => {
             chan.lock().unwrap().send(u).unwrap();
             Ok(Response::with(status::Ok))
         }
         Err(_) => {
-            println!("could not parse json!");
+            warn!("could not parse json!");
             Ok(Response::with(status::BadRequest))
         }
     }
