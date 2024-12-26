@@ -44,16 +44,16 @@ impl Reminder {
     fn fill_wakes(&mut self, next_date: &NaiveDate) {
         let before_date = *next_date - Duration::days(1);
         let mut to_insert = vec![
-            before_date.and_hms(13, 0, 0),
-            before_date.and_hms(18, 0, 0),
-            before_date.and_hms(20, 0, 0),
-            before_date.and_hms(22, 0, 0),
-            next_date.and_hms(0, 0, 0),
-            next_date.and_hms(2, 0, 0),
-            next_date.and_hms(4, 0, 0),
-            next_date.and_hms(6, 0, 0),
-            next_date.and_hms(8, 0, 0),
-            next_date.and_hms(12, 0, 0),
+            before_date.and_hms_opt(13, 0, 0).unwrap(),
+            before_date.and_hms_opt(18, 0, 0).unwrap(),
+            before_date.and_hms_opt(20, 0, 0).unwrap(),
+            before_date.and_hms_opt(22, 0, 0).unwrap(),
+            next_date.and_hms_opt(0, 0, 0).unwrap(),
+            next_date.and_hms_opt(2, 0, 0).unwrap(),
+            next_date.and_hms_opt(4, 0, 0).unwrap(),
+            next_date.and_hms_opt(6, 0, 0).unwrap(),
+            next_date.and_hms_opt(8, 0, 0).unwrap(),
+            next_date.and_hms_opt(12, 0, 0).unwrap(),
         ];
         to_insert.reverse();
         self.scheduled_wakes = to_insert
@@ -85,7 +85,7 @@ impl Reminder {
         if let Some(next_wake) = self.scheduled_wakes.last().copied() {
             if next_wake <= Local::now() {
                 self.scheduled_wakes.pop();
-                if next_wake.time() != NaiveTime::from_hms(12, 0, 0) {
+                if next_wake.time() != NaiveTime::from_hms_opt(12, 0, 0).unwrap() {
                     self.msg_update();
                 }
             }
@@ -132,7 +132,7 @@ fn sleep_until(time: &DateTime<Local>) {
 }
 
 fn format_update_msg(date: &NaiveDate, trashes: Vec<&TrashType>) -> String {
-    let day = if date.and_hms(5, 0, 0) > Local::now().naive_local() {
+    let day = if date.and_hms_opt(5, 0, 0).unwrap() > Local::now().naive_local() {
         "Morgen"
     } else {
         "Heute"

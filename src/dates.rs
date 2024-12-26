@@ -90,7 +90,7 @@ impl DateMgr {
         for (k, vec) in &self.dates.clone() {
             let new_vec = vec
                 .iter()
-                .filter(|date| date.and_hms(11, 0, 0) > Local::now().naive_local())
+                .filter(|date| date.and_hms_opt(11, 0, 0).unwrap() > Local::now().naive_local())
                 .map(|date| date.to_owned())
                 .collect();
             self.dates.insert(k.to_owned(), new_vec);
